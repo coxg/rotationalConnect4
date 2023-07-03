@@ -1,20 +1,24 @@
 #include <iostream>
+#include <map>
 
 using namespace std;
 
 const int width = 7;
 
-class Color {
-public:
-    string name;
-    string repr;
+enum Color { none, red, black };
 
-    bool operator==(const Color& rhs) const {
-        return name == rhs.name;
-    }
+map<Color, string> names = {
+        { red, "red"},
+        { black, "black"}
 };
 
-Color* board[width][width] = {nullptr};
+map<Color, string> reprs = {
+        { none, " " },
+        { red, "r"},
+        { black, "b"}
+};
+
+Color board[width][width] = {};
 
 void printColNumbers() {
     for (int i = 0; i < width; i++)
@@ -29,33 +33,29 @@ void printBoard() {
     {
         for (auto & j : i)
         {
-            if (j == nullptr) {
-                cout << "   ";
-            } else {
-                cout << " " + j->repr + " ";
-            }
+            cout << " " + reprs.at(j) + " ";
         }
         cout << "\n";
     }
     printColNumbers();
 }
 
-void dropPuck(Color &color, int col) {
+void dropPuck(Color color, int col) {
     int row = 0;
     assert(col >= 0);
     assert(col < width);
-    assert(board[row][col] == nullptr);
+    assert(board[row][col] == none);
 
     while (row + 1 < width) {
-        if (board[row + 1][col] == nullptr) {
+        if (board[row + 1][col] == none) {
             row++;
         } else {
             break;
         }
     }
 
-    cout << "dropping " + color.name + " puck at " << row << "," << col;
-    board[row][col] = &color;
+    cout << "dropping " + names.at(color) + " puck at " << row << "," << col;
+    board[row][col] = color;
 }
 
 optional<Color> getWinner() {
@@ -68,8 +68,8 @@ optional<Color> getWinner() {
     return nullopt;
 }
 
-void doAction(Color &color) {
-    cout << "Type a number to drop a " + color.repr + "puck, type 'left' to rotate left, or type 'right' to rotate right\n";
+void doAction(Color color) {
+    cout << "Type a number to drop a " + names.at(color) + "puck, type 'left' to rotate left, or type 'right' to rotate right\n";
     string action;
     cin >> action;
     if (action == "left") {
@@ -86,23 +86,15 @@ void doAction(Color &color) {
 
 int main()
 {
-    Color red;
-    red.name = "red";
-    red.repr = "r";
-
-    Color black;
-    black.name = "black";
-    black.repr = "b";
-
-    bool isRed = true;
+    Color curColor = red;
     while (true) {
         printBoard();
-        doAction(isRed ? red : black);
+        doAction(curColor);
         auto winner = getWinner();
         if (winner.has_value()) {
-            cout << winner->name + " wins!";
+            cout << names.at(winner.value()) + " wins!";
             break;
         }
-        isRed = !isRed;
+        curColor = curColor == red ? black : red;
     }
 }
