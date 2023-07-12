@@ -3,8 +3,6 @@
 
 using namespace std;
 
-const int width = 7;
-
 enum Color { none, red, black };
 
 map<Color, string> names = {
@@ -18,7 +16,36 @@ map<Color, string> reprs = {
         { black, "b"}
 };
 
+const int width = 7;
+const int maxRotationIndex = (width - 1) / 2;
 Color board[width][width] = {};
+
+void rotatePuck(bool doRotateRight, int x, int y) {
+    const int numCoords = 4;
+    int xCoords[numCoords] = { x, y, width - 1 - x, width - 1 - y };
+    int yCoords[numCoords] = { y, width - 1 - x, width - 1 - y, x };
+
+    int startIndex = doRotateRight ? 3 : 0;
+    int endIndex = doRotateRight ? 0 : 3;
+    int increment = doRotateRight ? -1 : 1;
+
+    Color savedPuck = board[xCoords[startIndex]][yCoords[startIndex]];
+    int fromCoord;
+    for (int i = startIndex; i != endIndex; i += increment) {
+        fromCoord = (i + increment) % numCoords;
+        board[xCoords[i]][yCoords[i]] = board[xCoords[fromCoord]][yCoords[fromCoord]];
+    }
+    board[xCoords[fromCoord]][yCoords[fromCoord]] = savedPuck;
+}
+
+void rotateBoard(bool doRotateRight) {
+    // one must be < and one must be <= to avoid overlap
+    for (int x = 0; x < maxRotationIndex; x++) {
+        for (int y = 0; y <= maxRotationIndex; y++) {
+            rotatePuck(doRotateRight, x, y);
+        }
+    }
+}
 
 void printColNumbers() {
     for (int i = 0; i < width; i++)
@@ -40,22 +67,27 @@ void printBoard() {
     printColNumbers();
 }
 
-void dropPuck(Color color, int col) {
-    int row = 0;
-    assert(col >= 0);
-    assert(col < width);
-    assert(board[row][col] == none);
+bool inBounds(int x, int y) {
+    return 0 <= x && x < width && 0 <= y && y < width;
+}
 
-    while (row + 1 < width) {
-        if (board[row + 1][col] == none) {
-            row++;
+void dropPuck(Color color, int x, int y) {
+    assert(inBounds(x, y));
+
+    while (inBounds(x, y)) {
+        if (!inBounds(x + 1, y)) {
+            break;
+        }
+        if (board[x + 1][y] == none) {
+            x++;
         } else {
             break;
         }
     }
 
-    cout << "dropping " + names.at(color) + " puck at " << row << "," << col;
-    board[row][col] = color;
+    cout << "dropping " + names.at(color) + " puck at " << x << "," << y << "\n";
+    board[x][y] = color;
+    cout << board[x][y] << " has been dropped!\n";
 }
 
 optional<Color> getWinner() {
@@ -69,18 +101,18 @@ optional<Color> getWinner() {
 }
 
 void doAction(Color color) {
-    cout << "Type a number to drop a " + names.at(color) + "puck, type 'left' to rotate left, or type 'right' to rotate right\n";
+    cout << "Type a number to drop a " + names.at(color) + " puck, type 'left' to rotate left, or type 'right' to rotate right\n";
     string action;
     cin >> action;
     if (action == "left") {
-        cout << "Rotating the board to the left";
-        // TODO
+        cout << "Rotating the board to the left\n";
+        rotateBoard(false);
     } else if (action == "right") {
-        cout << "Rotating the board to the right";
-        // TODO
+        cout << "Rotating the board to the right\n";
+        rotateBoard(true);
     } else {
-        int col = stoi(action);
-        dropPuck(color, col);
+        int y = stoi(action);
+        dropPuck(color, 0, y);
     }
 }
 
