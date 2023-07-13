@@ -21,21 +21,22 @@ const int maxRotationIndex = (width - 1) / 2;
 Color board[width][width] = {};
 
 void rotatePuck(bool doRotateRight, int x, int y) {
-    const int numCoords = 4;
-    int xCoords[numCoords] = { x, y, width - 1 - x, width - 1 - y };
-    int yCoords[numCoords] = { y, width - 1 - x, width - 1 - y, x };
+    // left and right rotation follow the same pattern, just in different directions
+    // x and y coordinates also follow the same pattern, but y has an offset of 1 - this is why it's length 5 despite
+    // there only being 4 positions represented
+    int coords[5] = { x, y, width - 1 - x, width - 1 - y, x };
 
     int startIndex = doRotateRight ? 3 : 0;
     int endIndex = doRotateRight ? 0 : 3;
     int increment = doRotateRight ? -1 : 1;
 
-    Color savedPuck = board[xCoords[startIndex]][yCoords[startIndex]];
+    Color tmp = board[coords[startIndex]][coords[startIndex + 1]];
     int fromCoord;
     for (int i = startIndex; i != endIndex; i += increment) {
-        fromCoord = (i + increment) % numCoords;
-        board[xCoords[i]][yCoords[i]] = board[xCoords[fromCoord]][yCoords[fromCoord]];
+        fromCoord = (i + increment) % 4;
+        board[coords[i]][coords[i + 1]] = board[coords[fromCoord]][coords[fromCoord + 1]];
     }
-    board[xCoords[fromCoord]][yCoords[fromCoord]] = savedPuck;
+    board[coords[fromCoord]][coords[fromCoord + 1]] = tmp;
 }
 
 void rotateBoard(bool doRotateRight) {
