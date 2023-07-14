@@ -39,15 +39,6 @@ void rotatePuck(bool doRotateRight, int x, int y) {
     board[coords[fromCoord]][coords[fromCoord + 1]] = tmp;
 }
 
-void rotateBoard(bool doRotateRight) {
-    // one must be < and one must be <= to avoid overlap
-    for (int x = 0; x < maxRotationIndex; x++) {
-        for (int y = 0; y <= maxRotationIndex; y++) {
-            rotatePuck(doRotateRight, x, y);
-        }
-    }
-}
-
 void printColNumbers() {
     for (int i = 0; i < width; i++)
     {
@@ -68,37 +59,50 @@ void printBoard() {
     printColNumbers();
 }
 
-bool inBounds(int x, int y) {
-    return 0 <= x && x < width && 0 <= y && y < width;
-}
+void applyGravity(int x, int y) {
+    Color color = board[x][y];
+    if (color == none) {
+        return;
+    }
 
-void dropPuck(Color color, int x, int y) {
-    assert(inBounds(x, y));
-
-    while (inBounds(x, y)) {
-        if (!inBounds(x + 1, y)) {
-            break;
-        }
+    board[x][y] = none;
+    while (x + 1 < width) {
         if (board[x + 1][y] == none) {
             x++;
         } else {
             break;
         }
     }
-
-    cout << "dropping " + names.at(color) + " puck at " << x << "," << y << "\n";
     board[x][y] = color;
-    cout << board[x][y] << " has been dropped!\n";
 }
 
-optional<Color> getWinner() {
+void dropPuck(Color color, int x, int y) {
+    assert(board[x][y] == none);
+    board[x][y] = color;
+    applyGravity(x, y);
+}
+
+void rotateBoard(bool doRotateRight) {
+    // one must be < and one must be <= to avoid overlap
+    for (int x = 0; x < maxRotationIndex; x++) {
+        for (int y = 0; y <= maxRotationIndex; y++) {
+            rotatePuck(doRotateRight, x, y);
+        }
+    }
+    // must apply gravity only after all pucks have rotated, and from bottom to top
+    for (int x = width - 1; x >= 0; x--) {
+        for (int y = 0; y < width; y++) {
+            applyGravity(x, y);
+        }
+    }
+}
+
+void checkForWinner() {
     // TODO
     // check horizontal
     // check vertical
     // check up/right diagonal
     // check down/right diagonal
-
-    return nullopt;
 }
 
 void doAction(Color color) {
@@ -106,10 +110,8 @@ void doAction(Color color) {
     string action;
     cin >> action;
     if (action == "left") {
-        cout << "Rotating the board to the left\n";
         rotateBoard(false);
     } else if (action == "right") {
-        cout << "Rotating the board to the right\n";
         rotateBoard(true);
     } else {
         int y = stoi(action);
@@ -123,11 +125,7 @@ int main()
     while (true) {
         printBoard();
         doAction(curColor);
-        auto winner = getWinner();
-        if (winner.has_value()) {
-            cout << names.at(winner.value()) + " wins!";
-            break;
-        }
+        checkForWinner();
         curColor = curColor == red ? black : red;
     }
 }
